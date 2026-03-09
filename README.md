@@ -26,31 +26,41 @@ This repository contains everything you need to learn AWS EFS (Elastic File Syst
 
 ## 🚀 Quick Start (3 Methods)
 
-### Method 1: Automated Script (5 minutes)
+### Method 1: One-Command Complete (Easiest)
+```bash
+git clone https://github.com/SrinathMLOps/efs.git
+cd efs
+chmod +x run-complete-lab.sh
+./run-complete-lab.sh
+```
+Fully automated: checks region → cleans up → sets up → verifies
+
+### Method 2: Step-by-Step Automated
 ```bash
 git clone https://github.com/SrinathMLOps/efs.git
 cd efs
 chmod +x *.sh
-./cleanup-all-efs-resources.sh  # Clean old resources
-./aws-efs-lab-setup-v2.sh       # Run setup
-./verify-setup.sh                # Verify ready
+./check-current-region.sh           # Check region
+./verify-and-cleanup-all.sh         # Clean + verify
+./aws-efs-lab-setup-v2.sh           # Setup
+./verify-setup.sh                    # Verify ready
 ```
 
-### Method 2: Manual Console (30 minutes)
-See **MANUAL-CONSOLE-SETUP.md** for complete step-by-step guide
-
-### Method 3: Hybrid (15 minutes)
-Run script + verify manually in AWS Console
+### Method 3: Manual Console
+See **MANUAL-CONSOLE-SETUP.md** for complete 21-step guide
 
 **👉 See HOW-TO-RUN.md for detailed instructions**
 
 ## 📦 Repository Contents
 
 ### 🤖 Automation Scripts
-- `aws-efs-lab-setup-v2.sh` - **Main setup script** (use this)
+- `run-complete-lab.sh` - **ONE-COMMAND COMPLETE WORKFLOW** (use this for easiest setup)
+- `aws-efs-lab-setup-v2.sh` - Main setup script (improved version)
 - `aws-efs-lab-setup.sh` - Legacy version
-- `cleanup-all-efs-resources.sh` - Delete all EFS lab resources
-- `cleanup-efs-lab.sh` - Generated after setup for cleanup
+- `verify-and-cleanup-all.sh` - **Check region + cleanup + verify** (interactive)
+- `cleanup-all-efs-resources.sh` - Delete all EFS lab resources (direct)
+- `cleanup-efs-lab.sh` - Generated after setup for specific cleanup
+- `check-current-region.sh` - Detect and display current AWS region
 - `verify-setup.sh` - Check if resources are ready
 - `connect-instances.sh` - Interactive connection helper
 - `test-efs-from-instance.sh` - Run on EC2 to test EFS

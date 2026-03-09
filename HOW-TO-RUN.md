@@ -2,11 +2,39 @@
 
 ## 📋 Choose Your Method
 
-You have **3 ways** to complete this lab:
+You have **4 ways** to complete this lab:
 
-1. **Automated Script** (5 minutes) - Recommended for quick setup
-2. **Manual Console** (30 minutes) - Best for learning
-3. **Hybrid** (15 minutes) - Script + manual verification
+1. **One-Command Complete** (5 minutes) - Fully automated workflow
+2. **Automated Script** (5 minutes) - Quick setup with manual steps
+3. **Manual Console** (30 minutes) - Best for learning
+4. **Hybrid** (15 minutes) - Script + manual verification
+
+---
+
+## METHOD 0: ONE-COMMAND COMPLETE (EASIEST)
+
+### 🎯 Complete Automated Workflow
+
+**Single command runs everything**:
+```bash
+git clone https://github.com/SrinathMLOps/efs.git
+cd efs
+chmod +x run-complete-lab.sh
+./run-complete-lab.sh
+```
+
+**What it does**:
+1. ✅ Checks current AWS region
+2. ✅ Scans for existing resources
+3. ✅ Cleans up old resources (if any)
+4. ✅ Creates all new resources
+5. ✅ Waits for everything to be ready
+6. ✅ Displays connection details
+7. ✅ Shows next steps
+
+**Total Time**: 5-7 minutes (fully automated)
+
+**Best for**: Quick demo, first-time users, time-constrained scenarios
 
 ---
 
@@ -32,6 +60,10 @@ chmod +x *.sh
 
 **Step 4: Cleanup Old Resources (if any)**
 ```bash
+# Option A: Interactive cleanup with verification
+./verify-and-cleanup-all.sh
+
+# Option B: Direct cleanup (no prompts)
 ./cleanup-all-efs-resources.sh
 ```
 
