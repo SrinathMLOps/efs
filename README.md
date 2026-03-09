@@ -10,31 +10,47 @@ This script automates the entire AWS EFS lab setup from VPC creation to testing 
 
 ## Quick Start
 
-**STEP 1: Cleanup any existing resources**
+### In AWS CloudShell:
+
+**STEP 1: Clone the repository**
 ```bash
-chmod +x cleanup-all-efs-resources.sh
+git clone https://github.com/SrinathMLOps/efs.git
+cd efs
+```
+
+**STEP 2: Make scripts executable**
+```bash
+chmod +x *.sh
+```
+
+**STEP 3: Cleanup any existing resources**
+```bash
 ./cleanup-all-efs-resources.sh
 ```
 
-**STEP 2: Run the setup**
+**STEP 4: Run the setup (takes 4-5 minutes)**
 ```bash
-chmod +x aws-efs-lab-setup-v2.sh
 ./aws-efs-lab-setup-v2.sh
 ```
 
-**STEP 3: Verify setup**
+**STEP 5: Verify setup is complete**
 ```bash
-chmod +x verify-setup.sh
 ./verify-setup.sh
 ```
 
-**STEP 4: Connect to instances**
+**STEP 6: View connection details**
 ```bash
-chmod +x connect-instances.sh
-./connect-instances.sh
+cat lab-summary.txt
 ```
 
-Or use EC2 Instance Connect in browser (easiest method)
+**STEP 7: Connect and test**
+- Use EC2 Instance Connect (browser) - easiest
+- Or SSH: `ssh -i efs-lab-key.pem ec2-user@<INSTANCE_IP>`
+
+**STEP 8: When done, cleanup**
+```bash
+./cleanup-efs-lab.sh
+```
 
 ## Available Scripts
 
