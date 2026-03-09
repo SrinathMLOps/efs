@@ -145,6 +145,16 @@ aws ec2 authorize-security-group-ingress \
     --cidr ${MY_IP}/32 \
     --region $REGION
 
+# Allow SSH from EC2 Instance Connect service (for browser-based connection)
+aws ec2 authorize-security-group-ingress \
+    --group-id $EC2_SG_ID \
+    --protocol tcp \
+    --port 22 \
+    --cidr 18.206.107.24/29 \
+    --region $REGION
+
+echo -e "${GREEN}✓ SSH access configured for your IP and EC2 Instance Connect${NC}"
+
 # EFS Security Group
 EFS_SG_ID=$(aws ec2 create-security-group \
     --group-name EFS-Lab-EFS-SG \
@@ -232,24 +242,55 @@ sleep 60
 # Step 10: Create User Data Script for EC2
 cat > user-data.sh << 'EOF'
 #!/bin/bash
+# Log all output for debugging
+exec > >(tee /var/log/user-data.log)
+exec 2>&1
+
+echo "Starting user data script at $(date)"
+
 # Update system
+echo "Updating system packages..."
 yum update -y
 
 # Install NFS utilities
+echo "Installing EFS utilities..."
 yum install -y amazon-efs-utils nfs-utils
 
 # Create mount directory
+echo "Creating mount directory..."
 mkdir -p /mnt/efs
 
+# Wait for EFS mount target to be fully available
+echo "Waiting for EFS mount target to be ready..."
+sleep 45
+
 # Mount EFS (will be replaced with actual EFS ID)
+echo "Configuring EFS mount in /etc/fstab..."
 echo "EFS_ID_PLACEHOLDER:/ /mnt/efs efs defaults,_netdev 0 0" >> /etc/fstab
+
+# Mount EFS
+echo "Mounting EFS..."
 mount -a
 
-# Create test marker file
-echo "EC2 instance $(hostname) mounted EFS successfully at $(date)" > /mnt/efs/mount-info-$(hostname).txt
+# Verify mount and retry if needed
+if mountpoint -q /mnt/efs; then
+    echo "EFS mounted successfully"
+    chmod 777 /mnt/efs
+    echo "EC2 instance $(hostname) mounted EFS successfully at $(date)" > /mnt/efs/mount-info-$(hostname).txt
+else
+    echo "First mount attempt failed, retrying in 30 seconds..."
+    sleep 30
+    mount -a
+    if mountpoint -q /mnt/efs; then
+        echo "EFS mounted successfully on retry"
+        chmod 777 /mnt/efs
+        echo "EC2 instance $(hostname) mounted EFS successfully at $(date)" > /mnt/efs/mount-info-$(hostname).txt
+    else
+        echo "EFS mount failed after retry"
+    fi
+fi
 
-# Set permissions
-chmod 777 /mnt/efs
+echo "User data script completed at $(date)"
 EOF
 
 # Replace placeholder with actual EFS ID
@@ -289,6 +330,11 @@ echo -e "\n${YELLOW}Waiting for instances to be running...${NC}"
 aws ec2 wait instance-running --instance-ids $INSTANCE1_ID $INSTANCE2_ID --region $REGION
 echo -e "${GREEN}✓ Both instances are now running${NC}"
 
+# Wait for status checks to pass
+echo -e "${YELLOW}Waiting for status checks to pass (this takes 2-3 minutes)...${NC}"
+aws ec2 wait instance-status-ok --instance-ids $INSTANCE1_ID $INSTANCE2_ID --region $REGION
+echo -e "${GREEN}✓ Both instances passed status checks and are ready for SSH${NC}"
+
 # Get instance public IPs
 INSTANCE1_IP=$(aws ec2 describe-instances \
     --instance-ids $INSTANCE1_ID \
@@ -320,13 +366,14 @@ Subnets:
 - Subnet 2 ID: $SUBNET2_ID (AZ: $AZ2)
 
 Security Groups:
-- EC2 SG: $EC2_SG_ID
-- EFS SG: $EFS_SG_ID
+- EC2 SG: $EC2_SG_ID (allows SSH from your IP and EC2 Instance Connect)
+- EFS SG: $EFS_SG_ID (allows NFS from EC2 instances)
 
 EFS File System:
 - EFS ID: $EFS_ID
-- Mount Target 1: $MOUNT_TARGET1_ID
-- Mount Target 2: $MOUNT_TARGET2_ID
+- Mount Target 1: $MOUNT_TARGET1_ID (AZ: $AZ1)
+- Mount Target 2: $MOUNT_TARGET2_ID (AZ: $AZ2)
+- DNS Name: $EFS_ID.efs.$REGION.amazonaws.com
 
 EC2 Instances:
 - Instance 1 ID: $INSTANCE1_ID
@@ -338,42 +385,86 @@ SSH Key:
 - Key Name: $KEY_NAME
 - Key File: ${KEY_NAME}.pem
 
-Connection Commands:
+Connection Methods:
 --------------------
+
+METHOD 1: SSH from Local Terminal (Recommended)
 ssh -i ${KEY_NAME}.pem ec2-user@$INSTANCE1_IP
 ssh -i ${KEY_NAME}.pem ec2-user@$INSTANCE2_IP
 
-Testing EFS:
-------------
-1. Connect to Instance 1:
-   ssh -i ${KEY_NAME}.pem ec2-user@$INSTANCE1_IP
-   
-2. Create a test file:
-   echo "Hello from Instance 1" | sudo tee /mnt/efs/test-from-instance1.txt
-   
-3. Connect to Instance 2:
-   ssh -i ${KEY_NAME}.pem ec2-user@$INSTANCE2_IP
-   
-4. Verify the file exists:
-   cat /mnt/efs/test-from-instance1.txt
-   
-5. Create another file from Instance 2:
-   echo "Hello from Instance 2" | sudo tee /mnt/efs/test-from-instance2.txt
-   
-6. Go back to Instance 1 and verify:
-   cat /mnt/efs/test-from-instance2.txt
+METHOD 2: SSH from AWS CloudShell
+1. Open CloudShell in AWS Console
+2. Upload ${KEY_NAME}.pem file
+3. Run: chmod 400 ${KEY_NAME}.pem
+4. Run: ssh -i ${KEY_NAME}.pem ec2-user@$INSTANCE1_IP
+
+METHOD 3: EC2 Instance Connect (Browser)
+1. Go to EC2 Console
+2. Select instance
+3. Click "Connect" button
+4. Choose "EC2 Instance Connect"
+5. Click "Connect"
+
+Testing EFS Shared Storage:
+----------------------------
+
+STEP 1: Connect to Instance 1
+ssh -i ${KEY_NAME}.pem ec2-user@$INSTANCE1_IP
+
+STEP 2: Verify EFS is mounted
+df -h | grep efs
+ls -la /mnt/efs/
+
+STEP 3: Create test files
+echo "Hello from Instance 1" | sudo tee /mnt/efs/test-from-instance1.txt
+sudo mkdir -p /mnt/efs/shared-folder
+echo "Shared data" | sudo tee /mnt/efs/shared-folder/data.txt
+
+STEP 4: Connect to Instance 2
+ssh -i ${KEY_NAME}.pem ec2-user@$INSTANCE2_IP
+
+STEP 5: Verify shared storage
+cat /mnt/efs/test-from-instance1.txt
+ls -la /mnt/efs/shared-folder/
+
+STEP 6: Create file from Instance 2
+echo "Hello from Instance 2" | sudo tee /mnt/efs/test-from-instance2.txt
+
+STEP 7: Go back to Instance 1 and verify
+cat /mnt/efs/test-from-instance2.txt
+
+Troubleshooting:
+----------------
+
+If EFS not mounted, run on EC2:
+sudo mount -t efs $EFS_ID:/ /mnt/efs
+
+Check user data logs:
+sudo cat /var/log/user-data.log
+
+Check mount status:
+df -h | grep efs
+mountpoint /mnt/efs
 
 Cleanup Command:
 ----------------
-To delete all resources, run:
 ./cleanup-efs-lab.sh
+
+IMPORTANT: Run cleanup to avoid AWS charges!
 
 EOF
 
 cat lab-summary.txt
 
 echo -e "\n${GREEN}✓ Summary saved to: lab-summary.txt${NC}"
-echo -e "${YELLOW}Note: Wait 2-3 minutes for user-data script to complete on EC2 instances${NC}"
+echo -e "\n${GREEN}========================================${NC}"
+echo -e "${GREEN}INSTANCES ARE READY FOR CONNECTION!${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo -e "${YELLOW}You can now connect using any of these methods:${NC}"
+echo -e "1. SSH: ssh -i ${KEY_NAME}.pem ec2-user@$INSTANCE1_IP"
+echo -e "2. AWS Console: EC2 → Select instance → Connect button"
+echo -e "3. CloudShell: Upload key and use SSH command above"
+echo -e "\n${YELLOW}Note: User data script is still running. Wait 1-2 minutes for EFS mount to complete.${NC}"
 
 # Create cleanup script
 cat > cleanup-efs-lab.sh << EOF

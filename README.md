@@ -16,22 +16,71 @@ chmod +x aws-efs-lab-setup.sh
 
 # Run the setup
 ./aws-efs-lab-setup.sh
+
+# Wait for completion (takes 3-5 minutes)
+# Script will wait for instances to pass status checks
+
+# Verify setup
+chmod +x verify-setup.sh
+./verify-setup.sh
+
+# Connect to instances
+chmod +x connect-instances.sh
+./connect-instances.sh
 ```
 
 ## What This Script Does
 
-1. Creates VPC (10.0.0.0/16)
-2. Creates 2 subnets in different AZs
+1. Creates VPC (10.0.0.0/16) with DNS hostnames enabled
+2. Creates 2 subnets in different AZs (us-east-1a, us-east-1b)
 3. Sets up Internet Gateway and routing
-4. Creates security groups (EC2 and EFS)
+4. Creates security groups:
+   - EC2 SG: Allows SSH from your IP + EC2 Instance Connect
+   - EFS SG: Allows NFS (port 2049) from EC2 instances
 5. Generates SSH key pair
-6. Creates EFS file system with mount targets
+6. Creates EFS file system with mount targets in both AZs
 7. Launches 2 EC2 instances with auto-mount configuration
-8. Provides connection details and testing instructions
+8. Waits for instances to pass status checks (ready for SSH)
+9. Provides connection details and testing instructions
+
+**Key improvements**:
+- Adds EC2 Instance Connect IP range to security group
+- Waits for status checks to pass before completing
+- Enhanced user data script with logging and retry logic
+- Verification script to check setup status
 
 ## Testing EFS Shared Storage
 
-After setup completes (wait 2-3 minutes for instances to initialize):
+The script waits for instances to be fully ready. After completion:
+
+### Method 1: EC2 Instance Connect (Browser - Easiest)
+1. Go to EC2 Console
+2. Select "EFS-Lab-Instance-1"
+3. Click **"Connect"** button
+4. Choose **"EC2 Instance Connect"**
+5. Click **"Connect"** (opens in browser)
+
+### Method 2: SSH from Terminal
+```bash
+ssh -i efs-lab-key.pem ec2-user@<INSTANCE1_IP>
+```
+
+### Method 3: Use Helper Script
+```bash
+./connect-instances.sh
+```
+
+### Verify EFS Mount
+```bash
+# Check if EFS is mounted
+df -h | grep efs
+
+# List files
+ls -la /mnt/efs/
+
+# Check user data logs if issues
+sudo cat /var/log/user-data.log
+```
 
 ### Connect to Instance 1
 ```bash
@@ -92,16 +141,46 @@ VPC (10.0.0.0/16)
 
 ## Troubleshooting
 
-If mount fails:
+### "Failed to connect to your instance" Error
+
+**Cause**: Instance still initializing or security group issue
+
+**Solution**:
 ```bash
-# Check if EFS utils are installed
-rpm -qa | grep amazon-efs-utils
+# Check if instances are ready
+./verify-setup.sh
 
-# Check mount status
+# If status checks not passed, wait 2 more minutes
+```
+
+### EFS Not Mounted
+
+**Check mount status**:
+```bash
 df -h | grep efs
+mountpoint /mnt/efs
+```
 
-# Manual mount
+**Manual mount**:
+```bash
 sudo mount -t efs <EFS_ID>:/ /mnt/efs
+```
+
+**Check logs**:
+```bash
+sudo cat /var/log/user-data.log
+```
+
+### Cannot SSH with Key
+
+**Fix permissions**:
+```bash
+chmod 400 efs-lab-key.pem
+```
+
+**Verify key**:
+```bash
+ssh-keygen -l -f efs-lab-key.pem
 ```
 
 ## Cost Estimate
