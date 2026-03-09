@@ -1,6 +1,70 @@
-# AWS EFS Lab - Complete Automation
+# AWS EFS Lab - Complete Learning Package
 
-This script automates the entire AWS EFS lab setup from VPC creation to testing shared storage between EC2 instances.
+![EFS Architecture](efs.png)
+
+This repository contains everything you need to learn AWS EFS (Elastic File System) - from automated scripts to detailed manual guides.
+
+## 🎯 What You'll Learn
+
+- Create VPC with multi-AZ subnets
+- Configure security groups for EC2 and EFS
+- Set up EFS file system with mount targets
+- Launch EC2 instances with auto-mount configuration
+- Verify shared storage across multiple instances
+- Understand high availability architecture
+
+## 📚 Documentation Guide
+
+| Document | Purpose | Time | Best For |
+|----------|---------|------|----------|
+| **HOW-TO-RUN.md** | Start here - choose your method | 2 min read | Everyone |
+| **MANUAL-CONSOLE-SETUP.md** | Complete manual setup (21 steps) | 30-40 min | Learning AWS Console |
+| **TESTING-GUIDE.md** | Verify EFS shared storage | 10 min | Testing & verification |
+| **QUICK-REFERENCE.md** | Command cheat sheet | Quick lookup | Quick reference |
+| **ARCHITECTURE-EXPLAINED.md** | Deep dive into architecture | 15 min read | Understanding design |
+| **README.md** | This file - overview | 5 min read | Getting started |
+
+## 🚀 Quick Start (3 Methods)
+
+### Method 1: Automated Script (5 minutes)
+```bash
+git clone https://github.com/SrinathMLOps/efs.git
+cd efs
+chmod +x *.sh
+./cleanup-all-efs-resources.sh  # Clean old resources
+./aws-efs-lab-setup-v2.sh       # Run setup
+./verify-setup.sh                # Verify ready
+```
+
+### Method 2: Manual Console (30 minutes)
+See **MANUAL-CONSOLE-SETUP.md** for complete step-by-step guide
+
+### Method 3: Hybrid (15 minutes)
+Run script + verify manually in AWS Console
+
+**👉 See HOW-TO-RUN.md for detailed instructions**
+
+## 📦 Repository Contents
+
+### 🤖 Automation Scripts
+- `aws-efs-lab-setup-v2.sh` - **Main setup script** (use this)
+- `aws-efs-lab-setup.sh` - Legacy version
+- `cleanup-all-efs-resources.sh` - Delete all EFS lab resources
+- `cleanup-efs-lab.sh` - Generated after setup for cleanup
+- `verify-setup.sh` - Check if resources are ready
+- `connect-instances.sh` - Interactive connection helper
+- `test-efs-from-instance.sh` - Run on EC2 to test EFS
+
+### 📖 Documentation
+- `HOW-TO-RUN.md` - **Start here** - Complete running guide
+- `MANUAL-CONSOLE-SETUP.md` - **21-step manual guide**
+- `TESTING-GUIDE.md` - Testing and verification procedures
+- `QUICK-REFERENCE.md` - Command cheat sheet
+- `ARCHITECTURE-EXPLAINED.md` - Architecture deep dive
+- `README.md` - This overview file
+
+### 🖼️ Diagrams
+- `efs.png` - Architecture diagram (see ARCHITECTURE-EXPLAINED.md)
 
 ## Prerequisites
 
