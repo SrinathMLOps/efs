@@ -2,7 +2,19 @@
 
 ![EFS Architecture](efs.png)
 
+## 👉 **[START HERE - Click to Begin](START-HERE.md)**
+
 This repository contains everything you need to learn AWS EFS (Elastic File System) - from automated scripts to detailed manual guides.
+
+## ⚡ Fastest Way to Run
+
+```bash
+git clone https://github.com/SrinathMLOps/efs.git && cd efs && chmod +x run-complete-lab.sh && ./run-complete-lab.sh
+```
+
+**One command does everything**: checks region → cleans up → sets up → verifies → shows next steps
+
+---
 
 ## 🎯 What You'll Learn
 
